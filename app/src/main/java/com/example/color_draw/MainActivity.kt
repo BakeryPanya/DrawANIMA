@@ -53,8 +53,13 @@ import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.color_draw.ui.theme.Color_drawTheme
 import com.example.color_draw.ui.theme.DrawingScreen
+import com.example.color_draw.ui.theme.PaintScreen
+import com.example.color_draw.ui.theme.Route
 import com.github.skydoves.colorpicker.compose.AlphaTile
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.ColorEnvelope
@@ -68,7 +73,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Color_drawTheme {
-                    DrawingScreen()
+                    PaintScreen()
             }
         }
     }
@@ -78,6 +83,27 @@ class MainActivity : ComponentActivity() {
 
 
 // 描画の記録するためにpathを表現する
+@Composable
+fun FaceApp(){
+    val navController = rememberNavController()
+    NavHost(
+        navController = navController, startDestination = Route.HOME.name
+    ){
+        composable(route = Route.EYE.name){
+            PaintScreen()
+        }
+        composable(route = Route.MOUSE.name){
+            PaintScreen()
+        }
+        composable(route = Route.ACCESSORY.name) {
+            PaintScreen()
+        }
+        composable(route = Route.PREVIEW.name) {
+            PaintScreen()
+        }
+    }
+}
+
 
 
 

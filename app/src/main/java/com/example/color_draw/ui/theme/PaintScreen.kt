@@ -36,19 +36,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.color_draw.PaintViewModel
 import com.github.skydoves.colorpicker.compose.AlphaTile
@@ -60,12 +58,21 @@ import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 @Composable
 fun PaintScreen(
-    paintviewmodel: PaintViewModel,
+    paintviewmodel: PaintViewModel  = PaintViewModel()
 ){
+
     DrawingScreen(
-//        paintViewmodel = paintviewmodel
+        setPaint = { newPaintData ->
+            paintviewmodel.updateEyePaint(newPaintData)
+        },
+        loadPaint = {
+            paintviewmodel.setEyePaint()
+        }
+
+
     )
 }
+//EYEPAINTSCREENを必ず作る
 
 @Composable
 fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) =
@@ -73,39 +80,34 @@ fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) =
 
 
 @Composable
-fun DrawingScreen(
-//    paintViewmodel: PaintViewModel,
-//    eventText: String = "SampleEvent",
-//    status: Int = 0 //1だと目、2だと口、3だとアクセサリ,0はどこにも保存しない
-    ) {
+fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintData>?,legacyTracks:List<PaintData>? = null) {
     // 描画の履歴の記録のため
-    val colorTracks = rememberSaveable{ mutableStateOf(PaintData(null, Color.Black, 10f))}
-    val _colorTracks = rememberSaveable { mutableStateOf(PaintData(null, Color.Black, 10f))}
     val tracks = rememberSaveable { mutableStateOf<List<PaintData>?>(null) }
     var penSize by remember { mutableFloatStateOf(4f) }
     var penColor by remember { mutableStateOf(Color.Black) }
     var showPenSizeSlider by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
 
+    val legacyTracks = rememberSaveable{ mutableStateOf(legacyTracks) }
+
+
     Scaffold(
         bottomBar = {
             Column {
                 if(showColorPicker) {
-                    ColorPicker(penColor = colorTracks.value.color) { color -> colorTracks.value.color = color }
+                    ColorPicker(penColor = penColor) { color -> penColor = color }
                 }
                 if(showPenSizeSlider){
                     Row {
                         Slider(
-                            value = colorTracks.value.size,
+                            value = penSize,
                             valueRange = 0f..100f,
                             onValueChange = {
                                 penSize = it
                             },
                             modifier = Modifier.fillMaxWidth(0.8f)
                         )
-                        Text(text = String.format("%.2f", penSize), modifier = Modifier.align(
-                            Alignment.CenterVertically
-                        ))
+                        Text(text = String.format("%.2f", penSize), modifier = Modifier.align(CenterVertically))
                     }
                 }
                 BottomAppBar(
@@ -126,21 +128,18 @@ fun DrawingScreen(
                             )
                         }
                         IconButton(onClick = {
-                            colorTracks.value = _colorTracks.value
-                            _colorTracks.value = PaintData(null, Color.Black, 10f)
-                        }){
+                            tracks.value =  loadPaint()
+                        }) {
                             Icon(
                                 Icons.Filled.Add,
-                                contentDescription = "読み込み"
+                                contentDescription = "ペンの変更",
                             )
                         }
-
                     },
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {
-                                _colorTracks.value = colorTracks.value
-                                colorTracks.value = PaintData(null, Color.Black, 10f)
+                                setPaint(tracks.value)
                             },
                             containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
                             elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
@@ -259,3 +258,4 @@ fun ColorPicker(penColor: Color, onColorChange: (Color) -> Unit) {
         }
     }
 }
+
