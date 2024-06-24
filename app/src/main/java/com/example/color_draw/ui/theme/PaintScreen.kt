@@ -48,7 +48,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.dp
-import com.example.color_draw.PaintViewModel
+import androidx.navigation.NavHostController
 import com.github.skydoves.colorpicker.compose.AlphaTile
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.ColorEnvelope
@@ -57,19 +57,56 @@ import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 
 @Composable
-fun PaintScreen(
-    paintviewmodel: PaintViewModel  = PaintViewModel()
+fun EyeScreen(
+    uiState: List<PaintData>?,
+    navController: NavHostController,
+    load: () -> List<PaintData>?,
+    set: (List<PaintData>?) -> Unit,
+
+    ){
+    DrawingScreen(
+        setPaint = set,
+        loadPaint = load,
+        legacyTracks = null,
+        nextButton = { navController.navigate(Route.MOUSE.name) },
+        previousButton = { navController.navigate(Route.HOME.name) }
+    )
+}
+
+@Composable
+fun MouseScreen(
+    uiState: List<PaintData>?,
+    navController: NavHostController,
+    legacyTracks: List<PaintData>?,
+    load: () -> List<PaintData>?,
+    set: (List<PaintData>?) -> Unit,
 ){
+    DrawingScreen(
+        setPaint = set,
+        loadPaint = load,
+        legacyTracks = uiState,
+        nextButton = { navController.navigate(Route.ACCESSORY.name) },
+        previousButton = { navController.navigate(Route.EYE.name) }
+    )
+}
+
+@Composable
+fun AccessoryScreen(
+    uiState: List<PaintData>?,
+    navController: NavHostController,
+    legacyTrack1: List<PaintData>?,
+    legacyTrack2: List<PaintData>?,
+    load: () -> List<PaintData>?,
+    set: (List<PaintData>?) -> Unit,
+){
+    val legacyTracks:List<PaintData> = listOfNotNull(legacyTrack1,legacyTrack2).flatten()
 
     DrawingScreen(
-        setPaint = { newPaintData ->
-            paintviewmodel.updateEyePaint(newPaintData)
-        },
-        loadPaint = {
-            paintviewmodel.setEyePaint()
-        }
-
-
+        setPaint = set,
+        loadPaint = load,
+        legacyTracks = legacyTracks,
+        nextButton = { navController.navigate(Route.PREVIEW.name) },
+        previousButton = { navController.navigate(Route.MOUSE.name) }
     )
 }
 //EYEPAINTSCREENを必ず作る
@@ -80,7 +117,7 @@ fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) =
 
 
 @Composable
-fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintData>?,legacyTracks:List<PaintData>? = null) {
+fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintData>?,legacyTracks:List<PaintData>? = null,nextButton:()->Unit = {},previousButton:()->Unit = {}) {
     // 描画の履歴の記録のため
     val tracks = rememberSaveable { mutableStateOf<List<PaintData>?>(null) }
     var penSize by remember { mutableFloatStateOf(4f) }
@@ -97,6 +134,7 @@ fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintDa
                 if(showColorPicker) {
                     ColorPicker(penColor = penColor) { color -> penColor = color }
                 }
+
                 if(showPenSizeSlider){
                     Row {
                         Slider(
