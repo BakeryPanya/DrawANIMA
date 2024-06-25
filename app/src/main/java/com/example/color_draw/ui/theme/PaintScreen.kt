@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -36,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -58,15 +60,12 @@ import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 @Composable
 fun EyeScreen(
-    uiState: List<PaintData>?,
     navController: NavHostController,
-    load: () -> List<PaintData>?,
     set: (List<PaintData>?) -> Unit,
 
     ){
     DrawingScreen(
         setPaint = set,
-        loadPaint = load,
         legacyTracks = null,
         nextButton = { navController.navigate(Route.MOUSE.name) },
         previousButton = { navController.navigate(Route.HOME.name) }
@@ -75,16 +74,13 @@ fun EyeScreen(
 
 @Composable
 fun MouseScreen(
-    uiState: List<PaintData>?,
     navController: NavHostController,
     legacyTracks: List<PaintData>?,
-    load: () -> List<PaintData>?,
     set: (List<PaintData>?) -> Unit,
 ){
     DrawingScreen(
         setPaint = set,
-        loadPaint = load,
-        legacyTracks = uiState,
+        legacyTracks = legacyTracks,
         nextButton = { navController.navigate(Route.ACCESSORY.name) },
         previousButton = { navController.navigate(Route.EYE.name) }
     )
@@ -92,21 +88,36 @@ fun MouseScreen(
 
 @Composable
 fun AccessoryScreen(
-    uiState: List<PaintData>?,
     navController: NavHostController,
     legacyTrack1: List<PaintData>?,
     legacyTrack2: List<PaintData>?,
-    load: () -> List<PaintData>?,
     set: (List<PaintData>?) -> Unit,
 ){
     val legacyTracks:List<PaintData> = listOfNotNull(legacyTrack1,legacyTrack2).flatten()
 
     DrawingScreen(
         setPaint = set,
-        loadPaint = load,
         legacyTracks = legacyTracks,
         nextButton = { navController.navigate(Route.PREVIEW.name) },
         previousButton = { navController.navigate(Route.MOUSE.name) }
+    )
+}
+
+@Composable
+fun PreviewScreen(
+    navController: NavHostController,
+    track1:List<PaintData>?,
+    track2:List<PaintData>?,
+    track3:List<PaintData>?
+){
+    val tracks:List<PaintData> = listOfNotNull(track1,track2,track3).flatten()
+    val set = {it : List<PaintData>? ->}
+    val load = {null}
+    DrawingScreen(
+        setPaint = set,
+        legacyTracks = tracks,
+        nextButton = { navController.navigate(Route.HOME.name) },
+        previousButton = { navController.navigate(Route.ACCESSORY.name) }
     )
 }
 //EYEPAINTSCREENを必ず作る
@@ -117,15 +128,15 @@ fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) =
 
 
 @Composable
-fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintData>?,legacyTracks:List<PaintData>? = null,nextButton:()->Unit = {},previousButton:()->Unit = {}) {
+fun DrawingScreen(setPaint:(List<PaintData>?)->Unit,legacyTracks:List<PaintData>? = null,nextButton:()->Unit = {},previousButton:()->Unit = {}) {
     // 描画の履歴の記録のため
     val tracks = rememberSaveable { mutableStateOf<List<PaintData>?>(null) }
     var penSize by remember { mutableFloatStateOf(4f) }
     var penColor by remember { mutableStateOf(Color.Black) }
     var showPenSizeSlider by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
-
-    val legacyTracks = rememberSaveable{ mutableStateOf(legacyTracks) }
+    var flag by remember { mutableStateOf(false) }
+    val legacyTrack = rememberSaveable{ mutableStateOf<List<PaintData>?>(legacyTracks) }
 
 
     Scaffold(
@@ -166,30 +177,39 @@ fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintDa
                             )
                         }
                         IconButton(onClick = {
-                            tracks.value =  loadPaint()
+                            setPaint(tracks.value)
+                            nextButton()
                         }) {
                             Icon(
                                 Icons.Filled.Add,
-                                contentDescription = "ペンの変更",
+                                contentDescription = "次に移動",
+                            )
+                        }
+                        IconButton(onClick = {
+                            previousButton()
+                        }) {
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = "前に戻る",
                             )
                         }
                     },
-                    floatingActionButton = {
-                        FloatingActionButton(
-                            onClick = {
-                                setPaint(tracks.value)
-                            },
-                            containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
-                        ) {
-                            Icon(Icons.Filled.ExitToApp, "保存")
-                        }
-                    }
+//                    floatingActionButton = {
+//                        FloatingActionButton(
+//                            onClick = {
+//                                setPaint(tracks.value)
+//                            },
+//                            containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
+//                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+//                        ) {
+//                            Icon(Icons.Filled.ExitToApp, "保存")
+//                        }
+//                    }
                 )
             }
         }
     ) {
-        DrawingCanvas(tracks = tracks, penSize = penSize, penColor = penColor, canvasHeight = it)
+        DrawingCanvas(tracks = tracks, legacyTracks = legacyTrack.value, penSize = penSize, penColor = penColor, canvasHeight = it)
     }
 }
 
@@ -197,7 +217,7 @@ fun DrawingScreen(setPaint:(List<PaintData>?)->Unit , loadPaint:()->List<PaintDa
 @Suppress("UNUSED_EXPRESSION")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, penSize: Float, penColor: Color, canvasHeight: PaddingValues) {
+fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, legacyTracks: List<PaintData>? ,penSize: Float, penColor: Color, canvasHeight: PaddingValues) {
     Canvas(
         modifier = Modifier
             .fillMaxSize()
@@ -241,10 +261,34 @@ fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, penSize: Float, penCol
         tracks.let {
             tracks.value?.forEach { PaintData ->
                 when (PaintData.path) {
+
                     is DrawingPathRoute.MoveTo -> {
                         currentPath = Path().apply { moveTo(PaintData.path.x, PaintData.path.y) }//最初の線を引くポイントを指定する。
                         currentSize = PaintData.size
-                        PaintData.color = penColor
+                        PaintData.color =  penColor
+                    }
+                    is DrawingPathRoute.LineTo -> {
+                        drawPath(
+                            path = currentPath.apply { lineTo(PaintData.path.x, PaintData.path.y) },
+                            color = PaintData.color,
+                            style = Stroke(width = currentSize),
+                            blendMode = BlendMode.SrcOver
+                        )
+                    }
+
+                    null -> Log.d("null", "null")
+                }
+            }
+        }
+
+        legacyTracks.let {
+            legacyTracks?.forEach { PaintData ->
+                when (PaintData.path) {
+                    is DrawingPathRoute.MoveTo -> {
+                        val dimmedColor = penColor.copy(alpha = 0.5f) // アルファ値を 0.5 に設定
+                        currentPath = Path().apply { moveTo(PaintData.path.x, PaintData.path.y) }//最初の線を引くポイントを指定する。
+                        currentSize = PaintData.size
+                        PaintData.color = dimmedColor
                     }
                     is DrawingPathRoute.LineTo -> {
                         drawPath(
@@ -265,11 +309,13 @@ fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, penSize: Float, penCol
 @Composable
 fun ColorPicker(penColor: Color, onColorChange: (Color) -> Unit) {
     val controller = rememberColorPickerController()
-    Column {
+    Column (
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
         HsvColorPicker(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(240.dp)
+                .height(200.dp)
                 .padding(20.dp),
             controller = controller,
             initialColor = penColor,
@@ -280,7 +326,7 @@ fun ColorPicker(penColor: Color, onColorChange: (Color) -> Unit) {
         Row {
             BrightnessSlider(
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
+                    .fillMaxWidth(0.5f)
                     .padding(40.dp)
                     .height(20.dp),
                 controller = controller,

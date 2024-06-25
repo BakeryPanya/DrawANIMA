@@ -14,7 +14,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.color_draw.ui.theme.AccessoryScreen
 import com.example.color_draw.ui.theme.Color_drawTheme
 import com.example.color_draw.ui.theme.EyeScreen
+import com.example.color_draw.ui.theme.HomeScreen
 import com.example.color_draw.ui.theme.MouseScreen
+import com.example.color_draw.ui.theme.PreviewScreen
 import com.example.color_draw.ui.theme.Route
 
 class MainActivity : ComponentActivity() {
@@ -46,16 +48,19 @@ fun FaceAppScreen(
         navController = navController, startDestination = Route.HOME.name
     ){
         composable(route = Route.EYE.name){
-            EyeScreen(eyePaintState,navController,{ paintViewModel.setEyePaint() },{ it -> paintViewModel.updateEyePaint(it) })
+            EyeScreen(navController,{ it -> paintViewModel.updateEyePaint(it) })
         }
         composable(route = Route.MOUSE.name){
-            MouseScreen(mousePaintState,navController,eyePaintState,{ paintViewModel.setMousePaint() },{ it -> paintViewModel.updateMousePaint(it) })
+            MouseScreen(navController,eyePaintState,{ it -> paintViewModel.updateMousePaint(it) })
         }
         composable(route = Route.ACCESSORY.name) {
-            AccessoryScreen(accessoryPaintState,navController,eyePaintState,mousePaintState,{ paintViewModel.setAccessoryPaint() },{ it -> paintViewModel.updateAccessoryPaint(it) })
+            AccessoryScreen(navController,eyePaintState,mousePaintState,{ it -> paintViewModel.updateAccessoryPaint(it) })
         }
         composable(route = Route.PREVIEW.name) {
-            //PaintScreen()
+            PreviewScreen(navController, track1 = eyePaintState, track2 = mousePaintState, track3 = accessoryPaintState)
+        }
+        composable(route = Route.HOME.name) {
+            HomeScreen(navController)
         }
     }
 }
