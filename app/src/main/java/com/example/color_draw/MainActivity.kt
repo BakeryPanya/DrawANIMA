@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Color_drawTheme {
-                    FaceAppScreen()
+                FaceAppScreen()
             }
         }
     }
@@ -64,8 +64,3 @@ fun FaceAppScreen(
         }
     }
 }
-
-
-
-
-

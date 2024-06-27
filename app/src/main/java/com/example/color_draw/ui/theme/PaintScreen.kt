@@ -2,6 +2,8 @@ package com.example.color_draw.ui.theme
 
 import android.util.Log
 import android.view.MotionEvent
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,14 +45,19 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.color_draw.R
 import com.github.skydoves.colorpicker.compose.AlphaTile
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.ColorEnvelope
@@ -113,7 +120,7 @@ fun PreviewScreen(
     val tracks:List<PaintData> = listOfNotNull(track1,track2,track3).flatten()
     val set = {it : List<PaintData>? ->}
     val load = {null}
-    DrawingScreen(
+    PreviewAnimation(
         setPaint = set,
         legacyTracks = tracks,
         nextButton = { navController.navigate(Route.HOME.name) },
@@ -122,9 +129,9 @@ fun PreviewScreen(
 }
 //EYEPAINTSCREENを必ず作る
 
-@Composable
-fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) =
-    Spacer(modifier.drawBehind(onDraw))
+//@Composable
+//fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) =
+//    Spacer(modifier.drawBehind(onDraw))
 
 
 @Composable
@@ -209,15 +216,15 @@ fun DrawingScreen(setPaint:(List<PaintData>?)->Unit,legacyTracks:List<PaintData>
             }
         }
     ) {
-        DrawingCanvas(tracks = tracks, legacyTracks = legacyTrack.value, penSize = penSize, penColor = penColor, canvasHeight = it)
+        DrawingCanvas(tracks = tracks, legacyTracks = legacyTrack.value, penSize = penSize, penColor = penColor, canvasHeight = it,images = ImageBitmap.imageResource(id = R.drawable.body1))
     }
 }
 
 
-@Suppress("UNUSED_EXPRESSION")
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, legacyTracks: List<PaintData>? ,penSize: Float, penColor: Color, canvasHeight: PaddingValues) {
+fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, legacyTracks: List<PaintData>? ,penSize: Float, penColor: Color, canvasHeight: PaddingValues, images: ImageBitmap) {
     Canvas(
         modifier = Modifier
             .fillMaxSize()
@@ -253,10 +260,19 @@ fun DrawingCanvas(tracks: MutableState<List<PaintData>?>, legacyTracks: List<Pai
                     else -> false
                 }
                 true
-            }) {
+            }
+    ) {
 
         var currentPath = Path()
         var currentSize = penSize
+        val x = size.width
+        val y = size.height
+
+        drawImage(
+            image = images,
+            topLeft = Offset(x / 2 - images.width / 2, y / 2 - images.height / 2),
+        )
+
 
         tracks.let {
             tracks.value?.forEach { PaintData ->
